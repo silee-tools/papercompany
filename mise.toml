@@ -1,0 +1,7 @@
+[tools]
+node = "20"
+pnpm = "9.15.4"
+
+[tasks.dev]
+description = "Start Paperclip dev server (API + UI)"
+run = "pnpm dev"
