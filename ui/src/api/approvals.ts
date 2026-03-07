@@ -1,4 +1,4 @@
-import type { Approval, ApprovalComment, Issue } from "@paperclipai/shared";
+import type { Approval, ApprovalComment, ApprovalStep, Issue } from "@paperclipai/shared";
 import { api } from "./client";
 
 export const approvalsApi = {
@@ -21,4 +21,5 @@ export const approvalsApi = {
   addComment: (id: string, body: string) =>
     api.post<ApprovalComment>(`/approvals/${id}/comments`, { body }),
   listIssues: (id: string) => api.get<Issue[]>(`/approvals/${id}/issues`),
+  listSteps: (id: string) => api.get<ApprovalStep[]>(`/approvals/${id}/steps`),
 };

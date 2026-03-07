@@ -12,8 +12,8 @@ import { typeLabel, typeIcon, defaultTypeIcon, ApprovalPayloadRenderer } from ".
 import { PageSkeleton } from "../components/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle2, ChevronRight, Sparkles } from "lucide-react";
-import type { ApprovalComment } from "@paperclipai/shared";
+import { CheckCircle2, ChevronRight, Sparkles, Circle, XCircle } from "lucide-react";
+import type { ApprovalComment, ApprovalStep } from "@paperclipai/shared";
 import { MarkdownBody } from "../components/MarkdownBody";
 
 export function ApprovalDetail() {
@@ -46,6 +46,12 @@ export function ApprovalDetail() {
     enabled: !!approvalId,
   });
 
+  const { data: steps } = useQuery({
+    queryKey: queryKeys.approvals.steps(approvalId!),
+    queryFn: () => approvalsApi.listSteps(approvalId!),
+    enabled: !!approvalId && (approval?.totalSteps ?? 1) > 1,
+  });
+
   const { data: agents } = useQuery({
     queryKey: queryKeys.agents.list(resolvedCompanyId ?? ""),
     queryFn: () => agentsApi.list(resolvedCompanyId ?? ""),
@@ -75,6 +81,7 @@ export function ApprovalDetail() {
     queryClient.invalidateQueries({ queryKey: queryKeys.approvals.detail(approvalId) });
     queryClient.invalidateQueries({ queryKey: queryKeys.approvals.comments(approvalId) });
     queryClient.invalidateQueries({ queryKey: queryKeys.approvals.issues(approvalId) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.approvals.steps(approvalId) });
     if (approval?.companyId) {
       queryClient.invalidateQueries({ queryKey: queryKeys.approvals.list(approval.companyId) });
       queryClient.invalidateQueries({
@@ -146,6 +153,7 @@ export function ApprovalDetail() {
 
   const payload = approval.payload as Record<string, unknown>;
   const linkedAgentId = typeof payload.agentId === "string" ? payload.agentId : null;
+  const isMultiStep = (approval.totalSteps ?? 1) > 1;
   const isActionable = approval.status === "pending" || approval.status === "revision_requested";
   const TypeIcon = typeIcon[approval.type] ?? defaultTypeIcon;
   const showApprovedBanner = searchParams.get("resolved") === "approved" && approval.status === "approved";
@@ -259,6 +267,52 @@ export function ApprovalDetail() {
             </p>
           </div>
         )}
+        {isMultiStep && steps && steps.length > 0 && (
+          <div className="pt-2 border-t border-border/60">
+            <p className="text-xs text-muted-foreground mb-2">
+              Approval progress — Step {approval.currentStep} of {approval.totalSteps}
+            </p>
+            <div className="space-y-2">
+              {steps.map((step: ApprovalStep) => {
+                const isCurrent = step.stepNumber === approval.currentStep && approval.status === "pending";
+                const approverLabel = step.approverRole === "board"
+                  ? "Board"
+                  : step.approverAgentId
+                    ? agentNameById.get(step.approverAgentId) ?? step.approverAgentId.slice(0, 8)
+                    : step.approverUserId ?? "Unassigned";
+                return (
+                  <div
+                    key={step.id}
+                    className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm ${
+                      isCurrent
+                        ? "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/40"
+                        : "bg-muted/30"
+                    }`}
+                  >
+                    {step.status === "approved" ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
+                    ) : step.status === "rejected" ? (
+                      <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                    ) : (
+                      <Circle className={`h-4 w-4 shrink-0 ${isCurrent ? "text-blue-500" : "text-muted-foreground"}`} />
+                    )}
+                    <span className="font-medium">Step {step.stepNumber}</span>
+                    <span className="text-muted-foreground">—</span>
+                    <span>{approverLabel}</span>
+                    {step.status !== "pending" && (
+                      <span className="ml-auto text-xs text-muted-foreground">
+                        {step.status}{step.decidedAt ? ` · ${new Date(step.decidedAt).toLocaleString()}` : ""}
+                      </span>
+                    )}
+                    {isCurrent && step.status === "pending" && (
+                      <span className="ml-auto text-xs text-blue-600 dark:text-blue-400 font-medium">Awaiting</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-2">
           {isActionable && (
             <>
@@ -268,7 +322,9 @@ export function ApprovalDetail() {
                 onClick={() => approveMutation.mutate()}
                 disabled={approveMutation.isPending}
               >
-                Approve
+                {isMultiStep && approval.currentStep < approval.totalSteps
+                  ? `Approve Step ${approval.currentStep}`
+                  : "Approve"}
               </Button>
               <Button
                 variant="destructive"

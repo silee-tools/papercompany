@@ -86,6 +86,7 @@ export type {
   Goal,
   Approval,
   ApprovalComment,
+  ApprovalStep,
   CostEvent,
   CostSummary,
   CostByAgent,
