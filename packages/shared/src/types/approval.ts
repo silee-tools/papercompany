@@ -1,4 +1,4 @@
-import type { ApprovalStatus, ApprovalType } from "../constants.js";
+import type { ApprovalStatus, ApprovalStepStatus, ApprovalType } from "../constants.js";
 
 export interface Approval {
   id: string;
@@ -11,8 +11,25 @@ export interface Approval {
   decisionNote: string | null;
   decidedByUserId: string | null;
   decidedAt: Date | null;
+  currentStep: number;
+  totalSteps: number;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ApprovalStep {
+  id: string;
+  approvalId: string;
+  stepNumber: number;
+  approverUserId: string | null;
+  approverAgentId: string | null;
+  approverRole: string | null;
+  status: ApprovalStepStatus;
+  decidedByUserId: string | null;
+  decidedByAgentId: string | null;
+  decisionNote: string | null;
+  decidedAt: Date | null;
+  createdAt: Date;
 }
 
 export interface ApprovalComment {

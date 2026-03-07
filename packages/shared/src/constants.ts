@@ -135,7 +135,11 @@ export const PROJECT_COLORS = [
   "#3b82f6", // blue
 ] as const;
 
-export const APPROVAL_TYPES = ["hire_agent", "approve_ceo_strategy"] as const;
+export const APPROVAL_TYPES = [
+  "hire_agent",
+  "approve_ceo_strategy",
+  "deliverable_review",
+] as const;
 export type ApprovalType = (typeof APPROVAL_TYPES)[number];
 
 export const APPROVAL_STATUSES = [
@@ -146,6 +150,9 @@ export const APPROVAL_STATUSES = [
   "cancelled",
 ] as const;
 export type ApprovalStatus = (typeof APPROVAL_STATUSES)[number];
+
+export const APPROVAL_STEP_STATUSES = ["pending", "approved", "rejected", "skipped"] as const;
+export type ApprovalStepStatus = (typeof APPROVAL_STEP_STATUSES)[number];
 
 export const SECRET_PROVIDERS = [
   "local_encrypted",
