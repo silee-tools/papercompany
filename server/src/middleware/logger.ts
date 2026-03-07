@@ -32,11 +32,17 @@ export const logger = pino({
     {
       target: "pino-pretty",
       options: { ...sharedOpts, ignore: "pid,hostname,req,res,responseTime", colorize: true, destination: 1 },
-      level: "info",
+      level: process.env.PAPERCLIP_LOG_LEVEL || "info",
     },
     {
-      target: "pino-pretty",
-      options: { ...sharedOpts, colorize: false, destination: logFile, mkdir: true },
+      target: "pino-roll",
+      options: {
+        file: logFile,
+        frequency: "daily",
+        size: "30m",
+        limit: { count: 7 },
+        mkdir: true,
+      },
       level: "debug",
     },
   ],
