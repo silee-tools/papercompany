@@ -27,14 +27,13 @@ import {
   agentConfigurationDoc as openCodeAgentConfigurationDoc,
 } from "@paperclipai/adapter-opencode-local";
 import {
-  execute as openclawExecute,
-  testEnvironment as openclawTestEnvironment,
-  onHireApproved as openclawOnHireApproved,
-} from "@paperclipai/adapter-openclaw/server";
+  execute as openclawGatewayExecute,
+  testEnvironment as openclawGatewayTestEnvironment,
+} from "@paperclipai/adapter-openclaw-gateway/server";
 import {
-  agentConfigurationDoc as openclawAgentConfigurationDoc,
-  models as openclawModels,
-} from "@paperclipai/adapter-openclaw";
+  agentConfigurationDoc as openclawGatewayAgentConfigurationDoc,
+  models as openclawGatewayModels,
+} from "@paperclipai/adapter-openclaw-gateway";
 import { listCodexModels } from "./codex-models.js";
 import { listCursorModels } from "./cursor-models.js";
 import {
@@ -81,14 +80,13 @@ const cursorLocalAdapter: ServerAdapterModule = {
   agentConfigurationDoc: cursorAgentConfigurationDoc,
 };
 
-const openclawAdapter: ServerAdapterModule = {
-  type: "openclaw",
-  execute: openclawExecute,
-  testEnvironment: openclawTestEnvironment,
-  onHireApproved: openclawOnHireApproved,
-  models: openclawModels,
+const openclawGatewayAdapter: ServerAdapterModule = {
+  type: "openclaw_gateway",
+  execute: openclawGatewayExecute,
+  testEnvironment: openclawGatewayTestEnvironment,
+  models: openclawGatewayModels,
   supportsLocalAgentJwt: false,
-  agentConfigurationDoc: openclawAgentConfigurationDoc,
+  agentConfigurationDoc: openclawGatewayAgentConfigurationDoc,
 };
 
 const openCodeLocalAdapter: ServerAdapterModule = {
@@ -114,7 +112,16 @@ const piLocalAdapter: ServerAdapterModule = {
 };
 
 const adaptersByType = new Map<string, ServerAdapterModule>(
-  [claudeLocalAdapter, codexLocalAdapter, openCodeLocalAdapter, piLocalAdapter, cursorLocalAdapter, openclawAdapter, processAdapter, httpAdapter].map((a) => [a.type, a]),
+  [
+    claudeLocalAdapter,
+    codexLocalAdapter,
+    openCodeLocalAdapter,
+    piLocalAdapter,
+    cursorLocalAdapter,
+    openclawGatewayAdapter,
+    processAdapter,
+    httpAdapter,
+  ].map((a) => [a.type, a]),
 );
 
 export function getServerAdapter(type: string): ServerAdapterModule {
