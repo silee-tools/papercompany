@@ -67,11 +67,18 @@ export function Issues() {
     setBreadcrumbs([{ label: "Issues" }]);
   }, [setBreadcrumbs]);
 
-  const { data: issues, isLoading, error } = useQuery({
+  const { data: allIssues, isLoading, error } = useQuery({
     queryKey: queryKeys.issues.list(selectedCompanyId!),
     queryFn: () => issuesApi.list(selectedCompanyId!),
     enabled: !!selectedCompanyId,
   });
+
+  const issues = useMemo(() => {
+    if (!allIssues) return undefined;
+    return allIssues.filter(
+      (issue) => !issue.labels?.some((l) => l.name.toLowerCase() === "chat"),
+    );
+  }, [allIssues]);
 
   const updateIssue = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>

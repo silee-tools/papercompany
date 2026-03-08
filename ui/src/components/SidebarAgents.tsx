@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { NavLink, useLocation } from "@/lib/router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, MessageSquare, Plus } from "lucide-react";
 import { useCompany } from "../context/CompanyContext";
 import { useDialog } from "../context/DialogContext";
 import { useSidebar } from "../context/SidebarContext";
@@ -109,33 +109,45 @@ export function SidebarAgents() {
           {visibleAgents.map((agent: Agent) => {
             const runCount = liveCountByAgent.get(agent.id) ?? 0;
             return (
-              <NavLink
-                key={agent.id}
-                to={agentUrl(agent)}
-                onClick={() => {
-                  if (isMobile) setSidebarOpen(false);
-                }}
-                className={cn(
-                  "flex items-center gap-2.5 px-3 py-1.5 text-[13px] font-medium transition-colors",
-                  activeAgentId === agentRouteRef(agent)
-                    ? "bg-accent text-foreground"
-                    : "text-foreground/80 hover:bg-accent/50 hover:text-foreground"
-                )}
-              >
-                <AgentIcon icon={agent.icon} className="shrink-0 h-3.5 w-3.5 text-muted-foreground" />
-                <span className="flex-1 truncate">{agent.name}</span>
-                {runCount > 0 && (
-                  <span className="ml-auto flex items-center gap-1.5 shrink-0">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+              <div key={agent.id} className="group/agent flex items-center">
+                <NavLink
+                  to={agentUrl(agent)}
+                  onClick={() => {
+                    if (isMobile) setSidebarOpen(false);
+                  }}
+                  className={cn(
+                    "flex-1 min-w-0 flex items-center gap-2.5 px-3 py-1.5 text-[13px] font-medium transition-colors",
+                    activeAgentId === agentRouteRef(agent)
+                      ? "bg-accent text-foreground"
+                      : "text-foreground/80 hover:bg-accent/50 hover:text-foreground"
+                  )}
+                >
+                  <AgentIcon icon={agent.icon} className="shrink-0 h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="flex-1 truncate">{agent.name}</span>
+                  {runCount > 0 && (
+                    <span className="ml-auto flex items-center gap-1.5 shrink-0">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+                      </span>
+                      <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400">
+                        {runCount} live
+                      </span>
                     </span>
-                    <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400">
-                      {runCount} live
-                    </span>
-                  </span>
-                )}
-              </NavLink>
+                  )}
+                </NavLink>
+                <NavLink
+                  to={`${agentUrl(agent)}/chat`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isMobile) setSidebarOpen(false);
+                  }}
+                  className="shrink-0 p-1 mr-1 rounded opacity-0 group-hover/agent:opacity-100 text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
+                  title={`Chat with ${agent.name}`}
+                >
+                  <MessageSquare className="h-3 w-3" />
+                </NavLink>
+              </div>
             );
           })}
         </div>

@@ -231,6 +231,7 @@ export function issueRoutes(db: Db, storage: StorageService) {
       unreadForUserId,
       projectId: req.query.projectId as string | undefined,
       labelId: req.query.labelId as string | undefined,
+      excludeLabelId: req.query.excludeLabelId as string | undefined,
       q: req.query.q as string | undefined,
     });
     res.json(result);

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
 import type { Db } from "@paperclipai/db";
 import {
   agents,
@@ -54,6 +54,7 @@ export interface IssueFilters {
   unreadForUserId?: string;
   projectId?: string;
   labelId?: string;
+  excludeLabelId?: string;
   q?: string;
 }
 
@@ -465,6 +466,15 @@ export function issueService(db: Db) {
           .where(and(eq(issueLabels.companyId, companyId), eq(issueLabels.labelId, filters.labelId)));
         if (labeledIssueIds.length === 0) return [];
         conditions.push(inArray(issues.id, labeledIssueIds.map((row) => row.issueId)));
+      }
+      if (filters?.excludeLabelId) {
+        const excludedIssueIds = await db
+          .select({ issueId: issueLabels.issueId })
+          .from(issueLabels)
+          .where(and(eq(issueLabels.companyId, companyId), eq(issueLabels.labelId, filters.excludeLabelId)));
+        if (excludedIssueIds.length > 0) {
+          conditions.push(notInArray(issues.id, excludedIssueIds.map((row) => row.issueId)));
+        }
       }
       if (hasSearch) {
         conditions.push(

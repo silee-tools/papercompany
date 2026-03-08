@@ -53,6 +53,7 @@ import {
   ChevronDown,
   ArrowLeft,
   Settings,
+  MessageSquare,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AgentIcon, AgentIconPicker } from "../components/AgentIconPicker";
@@ -469,6 +470,14 @@ export function AgentDetail() {
           >
             <Play className="h-3.5 w-3.5 sm:mr-1" />
             <span className="hidden sm:inline">Run Heartbeat</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`/agents/${canonicalAgentRef}/chat`)}
+          >
+            <MessageSquare className="h-3.5 w-3.5 sm:mr-1" />
+            <span className="hidden sm:inline">Chat</span>
           </Button>
           {agent.status === "paused" ? (
             <Button
