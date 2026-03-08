@@ -1,3 +1,6 @@
+[env]
+_.file = ".env"
+
 [tools]
 node = "20"
 pnpm = "9.15.4"
