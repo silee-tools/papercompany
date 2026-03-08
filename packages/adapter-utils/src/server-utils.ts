@@ -295,3 +295,42 @@ export async function runChildProcess(
     });
   });
 }
+
+/**
+ * Gracefully shut down all running child processes.
+ * Sends SIGTERM to each, waits up to its graceSec, then SIGKILL if still alive.
+ * Returns when all processes have exited.
+ */
+export async function shutdownAllProcesses(): Promise<void> {
+  const entries = Array.from(runningProcesses.entries());
+  if (entries.length === 0) return;
+
+  await Promise.allSettled(
+    entries.map(([runId, { child, graceSec }]) => {
+      return new Promise<void>((resolve) => {
+        if (child.killed || child.exitCode !== null) {
+          runningProcesses.delete(runId);
+          resolve();
+          return;
+        }
+
+        const onExit = () => {
+          clearTimeout(killTimer);
+          runningProcesses.delete(runId);
+          resolve();
+        };
+
+        child.once("close", onExit);
+        child.once("error", onExit);
+
+        child.kill("SIGTERM");
+
+        const killTimer = setTimeout(() => {
+          if (!child.killed && child.exitCode === null) {
+            child.kill("SIGKILL");
+          }
+        }, Math.max(1, graceSec) * 1000);
+      });
+    }),
+  );
+}

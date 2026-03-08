@@ -25,6 +25,7 @@ import { loadConfig } from "./config.js";
 import { logger } from "./middleware/logger.js";
 import { setupLiveEventsWebSocketServer } from "./realtime/live-events-ws.js";
 import { heartbeatService } from "./services/index.js";
+import { shutdownAllProcesses } from "./adapters/index.js";
 import { createStorageServiceFromConfig } from "./storage/index.js";
 import { printStartupBanner } from "./startup-banner.js";
 import { getBoardClaimWarningUrl, initializeBoardClaimChallenge } from "./board-claim.js";
@@ -488,7 +489,8 @@ if (config.heartbeatSchedulerEnabled) {
   const heartbeat = heartbeatService(db as any);
 
   // Reap orphaned runs at startup (no threshold -- runningProcesses is empty)
-  void heartbeat.reapOrphanedRuns().catch((err) => {
+  // Auto-resume: re-enqueue process_lost runs so agents continue their work
+  void heartbeat.reapOrphanedRuns({ autoResume: true }).catch((err) => {
     logger.error({ err }, "startup reap of orphaned heartbeat runs failed");
   });
 
@@ -610,16 +612,26 @@ server.listen(listenPort, config.host, () => {
   }
 });
 
-if (embeddedPostgres && embeddedPostgresStartedByThisProcess) {
+{
   const shutdown = async (signal: "SIGINT" | "SIGTERM") => {
-    logger.info({ signal }, "Stopping embedded PostgreSQL");
+    logger.info({ signal }, "Graceful shutdown: stopping agent processes");
     try {
-      await embeddedPostgres?.stop();
+      await shutdownAllProcesses();
+      logger.info("All agent processes stopped");
     } catch (err) {
-      logger.error({ err }, "Failed to stop embedded PostgreSQL cleanly");
-    } finally {
-      process.exit(0);
+      logger.error({ err }, "Failed to stop agent processes cleanly");
     }
+
+    if (embeddedPostgres && embeddedPostgresStartedByThisProcess) {
+      logger.info({ signal }, "Stopping embedded PostgreSQL");
+      try {
+        await embeddedPostgres?.stop();
+      } catch (err) {
+        logger.error({ err }, "Failed to stop embedded PostgreSQL cleanly");
+      }
+    }
+
+    process.exit(0);
   };
 
   process.once("SIGINT", () => {

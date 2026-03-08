@@ -150,7 +150,7 @@ function ThreadView({
 }
 
 export function AgentChat() {
-  const { agentId } = useParams<{ agentId: string }>();
+  const { agentId: agentRef } = useParams<{ agentId: string }>();
   const { selectedCompany } = useCompany();
   const companyId = selectedCompany?.id ?? "";
   const queryClient = useQueryClient();
@@ -163,13 +163,14 @@ export function AgentChat() {
 
   const { chatLabel, ensureChatLabel } = useChatLabel(companyId);
 
-  // Agent info (auto-refreshed by LiveUpdatesProvider on agent.status events)
+  // Agent info — resolve URL key (e.g. "chatdev") to full agent object
   const agentQuery = useQuery({
-    queryKey: queryKeys.agents.detail(agentId!),
-    queryFn: () => agentsApi.get(agentId!, companyId),
-    enabled: !!agentId && !!companyId,
+    queryKey: queryKeys.agents.detail(agentRef!),
+    queryFn: () => agentsApi.get(agentRef!, companyId),
+    enabled: !!agentRef && !!companyId,
   });
   const agent = agentQuery.data;
+  const agentId = agent?.id; // resolved UUID — safe for server API filters
 
   // Agent heartbeat runs (auto-refreshed by LiveUpdatesProvider on heartbeat.run.status events)
   const heartbeatsQuery = useQuery({
@@ -283,13 +284,21 @@ export function AgentChat() {
 
   const canSubmit = !submitting && !!body.trim();
 
-  if (!agentId) return null;
+  if (!agentRef) return null;
+
+  if (agentQuery.isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-        <Link to={`/agents/${agentId}`}>
+        <Link to={`/agents/${agentRef}`}>
           <ArrowLeft className="h-4 w-4 text-muted-foreground hover:text-foreground" />
         </Link>
         {agent && (

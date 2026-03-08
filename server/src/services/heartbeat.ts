@@ -894,8 +894,9 @@ export function heartbeatService(db: Db) {
     }
   }
 
-  async function reapOrphanedRuns(opts?: { staleThresholdMs?: number }) {
+  async function reapOrphanedRuns(opts?: { staleThresholdMs?: number; autoResume?: boolean }) {
     const staleThresholdMs = opts?.staleThresholdMs ?? 0;
+    const autoResume = opts?.autoResume ?? false;
     const now = new Date();
 
     // Find all runs in "queued" or "running" state
@@ -905,6 +906,7 @@ export function heartbeatService(db: Db) {
       .where(inArray(heartbeatRuns.status, ["queued", "running"]));
 
     const reaped: string[] = [];
+    const resumed: string[] = [];
 
     for (const run of activeRuns) {
       if (runningProcesses.has(run.id)) continue;
@@ -935,15 +937,37 @@ export function heartbeatService(db: Db) {
         await releaseIssueExecutionAndPromote(updatedRun);
       }
       await finalizeAgentStatus(run.agentId, "failed");
-      await startNextQueuedRunForAgent(run.agentId);
       runningProcesses.delete(run.id);
       reaped.push(run.id);
+
+      // Auto-resume: re-enqueue with the same context so the agent can continue
+      if (autoResume && updatedRun) {
+        try {
+          const contextSnapshot = (updatedRun.contextSnapshot as Record<string, unknown>) ?? {};
+          const payload: Record<string, unknown> = {};
+          if (contextSnapshot.issueId) payload.issueId = contextSnapshot.issueId;
+          if (contextSnapshot.taskId) payload.taskId = contextSnapshot.taskId;
+
+          await enqueueWakeup(run.agentId, {
+            source: "on_demand",
+            triggerDetail: "system",
+            reason: "resume_process_lost_run",
+            payload,
+          });
+          resumed.push(run.id);
+          logger.info({ runId: run.id, agentId: run.agentId }, "auto-resumed process_lost run");
+        } catch (err) {
+          logger.warn({ err, runId: run.id, agentId: run.agentId }, "failed to auto-resume process_lost run");
+        }
+      } else {
+        await startNextQueuedRunForAgent(run.agentId);
+      }
     }
 
     if (reaped.length > 0) {
-      logger.warn({ reapedCount: reaped.length, runIds: reaped }, "reaped orphaned heartbeat runs");
+      logger.warn({ reapedCount: reaped.length, resumedCount: resumed.length, runIds: reaped }, "reaped orphaned heartbeat runs");
     }
-    return { reaped: reaped.length, runIds: reaped };
+    return { reaped: reaped.length, resumed: resumed.length, runIds: reaped };
   }
 
   async function updateRuntimeState(
