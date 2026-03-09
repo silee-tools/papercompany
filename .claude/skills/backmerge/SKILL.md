@@ -1,16 +1,22 @@
 ---
-description: upstream/master를 현재 브랜치에 backmerge (교육적 변경 요약 포함)
-allowed-tools: Bash(git *), Bash(pnpm *)
+name: backmerge
+description: >
+  This skill should be used when the user asks to "backmerge", "백머지",
+  "merge upstream", "upstream 머지", "upstream 변경사항 가져오기",
+  or wants to sync the current branch with upstream/master.
+  Merges upstream/master into the current branch with educational change summaries.
 ---
 
 # Backmerge: upstream/master -> 현재 브랜치
 
-upstream 저장소(`paperclipai/paperclip`)의 master 브랜치를 현재 브랜치에 머지합니다.
-변경사항을 교육적으로 요약하여 사용자가 upstream의 발전 방향을 이해할 수 있게 합니다.
+upstream 저장소(`paperclipai/paperclip`)의 master 브랜치를 현재 브랜치에 머지한다.
+변경사항을 교육적으로 요약하여 사용자가 upstream의 발전 방향을 이해할 수 있게 한다.
+
+**도구 제한**: 이 스킬 실행 시 `Bash(git *)`, `Bash(pnpm *)` 만 사용할 것.
 
 ## 실행 절차
 
-아래 단계를 순서대로 실행하세요. 각 단계에서 오류가 발생하면 즉시 중단하고 사용자에게 알려주세요.
+아래 단계를 순서대로 실행한다. 각 단계에서 오류가 발생하면 즉시 중단하고 사용자에게 알린다.
 
 ### 1. 사전 확인
 
