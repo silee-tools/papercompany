@@ -48,6 +48,25 @@ export const logger = pino({
   ],
 }));
 
+// Route uncaught errors and console.error/warn to pino so they appear in log files
+process.on("uncaughtException", (err) => {
+  logger.fatal({ err }, "uncaughtException");
+});
+process.on("unhandledRejection", (reason) => {
+  logger.error({ err: reason }, "unhandledRejection");
+});
+
+const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
+console.error = (...args: unknown[]) => {
+  logger.error({ consoleError: args.map(String).join(" ") }, "console.error");
+  originalConsoleError.apply(console, args);
+};
+console.warn = (...args: unknown[]) => {
+  logger.warn({ consoleWarn: args.map(String).join(" ") }, "console.warn");
+  originalConsoleWarn.apply(console, args);
+};
+
 export const httpLogger = pinoHttp({
   logger,
   customLogLevel(_req, res, err) {
